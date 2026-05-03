@@ -1,0 +1,8 @@
+flask
+python-dotenv
+google-genai
+SpeechRecognition
+pydub
+reportlab
+PyPDF2
+gunicorn

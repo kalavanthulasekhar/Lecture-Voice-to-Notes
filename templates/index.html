@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎓 Lecture Voice-to-Notes Generator</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+
+        .container-main {
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            opacity: 0.95;
+        }
+
+        .upload-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            margin-bottom: 30px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .upload-section h5 {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 30px;
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .file-upload-wrapper:hover .file-upload-label {
+            background: #e8ebff;
+            border-color: #764ba2;
+        }
+
+        .file-upload-label i {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .mic-section {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9ff;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+
+        .mic-section h5 {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .mic-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-mic-start {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-mic-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-mic-stop {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-mic-stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-mic-stop:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status-indicator.recording {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+            animation: pulse 1s infinite;
+        }
+
+        .status-indicator.processing {
+            background: #fef3c7;
+            color: #92400e;
+            display: block;
+        }
+
+        .status-indicator.success {
+            background: #dcfce7;
+            color: #15803d;
+            display: block;
+        }
+
+        .status-indicator.error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .output-section {
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .output-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .output-action-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-json {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .btn-txt {
+            background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+        }
+
+        .processing-dots::after {
+            content: "";
+            display: inline-block;
+            width: 1.5em;
+            text-align: left;
+            animation: dots 1.2s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0% { content: ""; }
+            25% { content: "."; }
+            50% { content: ".."; }
+            75% { content: "..."; }
+            100% { content: ""; }
+        }
+
+        .output-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 35px;
+            margin-bottom: 30px;
+        }
+
+        .output-card h3 {
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid #f59e0b;
+            margin-bottom: 20px;
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        .notes-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .notes-list li {
+            padding: 15px;
+            margin-bottom: 12px;
+            background: #f3f4f6;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .notes-list li:hover {
+            background: #e5e7eb;
+            transform: translateX(5px);
+        }
+
+        .notes-list li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .quiz-item {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #8b5cf6;
+        }
+
+        .quiz-question {
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 1.05rem;
+        }
+
+        .quiz-options {
+            list-style: none;
+            margin-bottom: 15px;
+        }
+
+        .quiz-options li {
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .quiz-options li:hover {
+            background: #e5e7eb;
+            border-color: #8b5cf6;
+        }
+
+        .quiz-answer {
+            color: #059669;
+            font-weight: 600;
+            padding-top: 10px;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .flashcard {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .flashcard-q {
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+
+        .flashcard-a {
+            color: #4b5563;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+        }
+
+        .error-alert {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #991b1b;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .upload-card {
+                padding: 25px;
+            }
+
+            .output-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container-main">
+    <div class="header">
+        <h1>🎓 Lecture Voice-to-Notes</h1>
+        <p>Transform your lectures into structured notes, quizzes & flashcards</p>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="upload-card">
+        <div class="upload-section">
+            <h5>📤 Upload Audio File</h5>
+            <form method="POST" enctype="multipart/form-data" id="fileForm">
+                <div class="file-upload-wrapper">
+                    <input type="file" name="audio" accept="audio/*" id="audioFile" required>
+                    <label for="audioFile" class="file-upload-label">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <div>Drag & drop audio here or click to browse</div>
+                        <div style="font-size: 0.9rem; color: #999; margin-top: 5px;">MP3, WAV, M4A, OGG, etc.</div>
+                    </label>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-wand-magic-sparkles"></i> Generate Notes
+                </button>
+            </form>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0; color: #999;">
+            <strong>— OR —</strong>
+        </div>
+
+        <!-- Mic Recording Section -->
+        <div class="mic-section">
+            <h5>🎙️ Record Live Lecture</h5>
+            <div class="mic-buttons">
+                <button type="button" class="btn-mic-start" id="startBtn" onclick="startRecording()">
+                    <i class="fas fa-microphone"></i> Start Recording
+                </button>
+                <button type="button" class="btn-mic-stop" id="stopBtn" onclick="stopRecording()" disabled>
+                    <i class="fas fa-stop"></i> Stop Recording
+                </button>
+            </div>
+            <div class="status-indicator" id="status"></div>
+        </div>
+    </div>
+
+    <!-- Error Alert -->
+    <div class="error-alert" id="errorAlert"></div>
+
+    <!-- Output Section -->
+    <div id="outputContainer">
+    {% if data %}
+    <div class="output-section">
+        <div class="output-actions">
+            <button class="output-action-btn btn-json" onclick="downloadOutput('json')">
+                <i class="fas fa-file-code"></i> Download JSON
+            </button>
+            <button class="output-action-btn btn-txt" onclick="downloadOutput('txt')">
+                <i class="fas fa-file-lines"></i> Download TXT
+            </button>
+        </div>
+        <!-- Summary -->
+        {% if data.get('summary') %}
+        <div class="output-card">
+            <h3><i class="fas fa-lightbulb"></i> Summary</h3>
+            <div class="summary-box">
+                {{ data.summary }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Notes -->
+        {% if data.get('notes') %}
+        <div class="output-card">
+            <h3><i class="fas fa-list-check"></i> Key Notes</h3>
+            <ul class="notes-list">
+                {% for note in data.notes %}
+                <li>{{ note }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Quiz -->
+        {% if data.get('quiz') and data.quiz|length > 0 %}
+        <div class="output-card">
+            <h3><i class="fas fa-question-circle"></i> Quiz Questions</h3>
+            {% for q in data.quiz %}
+            <div class="quiz-item">
+                <div class="quiz-question">Q{{ loop.index }}: {{ q.question if q.question else 'Question' }}</div>
+                {% if q.get('options') %}
+                <ul class="quiz-options">
+                    {% for opt in q.options %}
+                    <li>{{ opt }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                {% if q.get('answer') %}
+                <div class="quiz-answer">✓ Answer: {{ q.answer }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Flashcards -->
+        {% if data.get('flashcards') and data.flashcards|length > 0 %}
+        <div class="output-card">
+            <h3><i class="fas fa-brain"></i> Flashcards</h3>
+            {% for card in data.flashcards %}
+            <div class="flashcard">
+                <div class="flashcard-q">Q: {{ card.get('question', 'Question') }}</div>
+                <div class="flashcard-a">A: {{ card.get('answer', 'Answer') }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    </div>
+
+</div>
+
+<script id="initialOutputData" type="application/json">{% if data %}{{ data|tojson }}{% else %}null{% endif %}</script>
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+let latestOutputData = null;
+let processingInterval = null;
+
+try {
+    const initialData = document.getElementById('initialOutputData');
+    latestOutputData = initialData ? JSON.parse(initialData.textContent) : null;
+} catch (_) {
+    latestOutputData = null;
+}
+
+function startProcessingTicker() {
+    const messages = [
+        '⏳ Uploading audio',
+        '🧠 Transcribing audio',
+        '✨ Generating notes'
+    ];
+    let idx = 0;
+    showStatus('processing', `<span class="processing-dots">${messages[idx]}</span>`);
+    clearInterval(processingInterval);
+    processingInterval = setInterval(() => {
+        idx = (idx + 1) % messages.length;
+        showStatus('processing', `<span class="processing-dots">${messages[idx]}</span>`);
+    }, 2500);
+}
+
+function stopProcessingTicker() {
+    clearInterval(processingInterval);
+    processingInterval = null;
+}
+
+// File upload preview
+document.getElementById('audioFile').addEventListener('change', function(e) {
+    const fileName = e.target.files[0]?.name;
+    if (fileName) {
+        const fileNameEl = document.getElementById('fileName');
+        fileNameEl.textContent = '✓ Selected: ' + fileName;
+        fileNameEl.style.display = 'block';
+    }
+});
+
+// File form submission
+document.getElementById('fileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    startProcessingTicker();
+    
+    try {
+        const response = await fetch('/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const html = await response.text();
+            document.open();
+            document.write(html);
+            document.close();
+        } else {
+            stopProcessingTicker();
+            showError('Failed to process audio file. Please try again.');
+        }
+    } catch (error) {
+        stopProcessingTicker();
+        showError('Error: ' + error.message);
+    }
+});
+
+async function startRecording() {
+    try {
+        console.log('Start Recording clicked');
+        showStatus('processing', '📋 Requesting microphone access...');
+        
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        });
+        
+        console.log('Microphone access granted');
+        
+        mediaRecorder = new MediaRecorder(stream, { 
+            mimeType: 'audio/webm;codecs=opus' 
+        });
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = e => {
+            console.log('Data available:', e.data.size, 'bytes');
+            if (e.data.size > 0) {
+                audioChunks.push(e.data);
+            }
+        };
+        
+        mediaRecorder.start();
+        isRecording = true;
+        
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        
+        console.log('Recording started');
+        showStatus('recording', '🔴 Recording... Click "Stop" when finished');
+        
+    } catch (error) {
+        console.error('Recording error:', error);
+        showError('Microphone error: ' + error.message + '. Please allow microphone access and try again.');
+    }
+}
+
+function stopRecording() {
+    if (!mediaRecorder || !isRecording) return;
+    
+    mediaRecorder.stop();
+    isRecording = false;
+    
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = true;
+    
+    mediaRecorder.onstop = async () => {
+        startProcessingTicker();
+        
+        try {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            
+            const formData = new FormData();
+            formData.append('audio', blob, 'recording.webm');
+            
+            const response = await fetch('/upload_audio', {
+                method: 'POST',
+                body: formData
+            });
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                stopProcessingTicker();
+                showError('Server returned invalid response. Check console for details.');
+                return;
+            }
+            
+            if (response.ok && data && !data.error) {
+                stopProcessingTicker();
+                renderOutput(data);
+                showStatus('success', '✅ Recording processed successfully!');
+            } else {
+                stopProcessingTicker();
+                const errorMsg = data?.error || 'Failed to process recording';
+                showError(errorMsg);
+                document.getElementById('startBtn').disabled = false;
+            }
+        } catch (error) {
+            stopProcessingTicker();
+            showError('Network error: ' + error.message);
+            document.getElementById('startBtn').disabled = false;
+        }
+    };
+    
+    // Stop all audio tracks
+    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+}
+
+function showStatus(type, message) {
+    const statusEl = document.getElementById('status');
+    statusEl.className = 'status-indicator ' + type;
+    statusEl.innerHTML = message;
+    statusEl.style.display = 'block';
+}
+
+function showError(message) {
+    console.error('Error:', message);
+    const errorEl = document.getElementById('errorAlert');
+    errorEl.innerHTML = '<strong>❌ Error:</strong> ' + message;
+    errorEl.style.display = 'block';
+    errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Hide after 10 seconds instead of 5
+    setTimeout(() => {
+        errorEl.style.display = 'none';
+    }, 10000);
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, function(c) {
+        return ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[c];
+    });
+}
+
+function renderOutput(data) {
+    const container = document.getElementById('outputContainer');
+    if (!container || !data) return;
+    latestOutputData = data;
+
+    let html = `
+        <div class="output-section">
+            <div class="output-actions">
+                <button class="output-action-btn btn-json" onclick="downloadOutput('json')">
+                    <i class="fas fa-file-code"></i> Download JSON
+                </button>
+                <button class="output-action-btn btn-txt" onclick="downloadOutput('txt')">
+                    <i class="fas fa-file-lines"></i> Download TXT
+                </button>
+            </div>
+    `;
+
+    if (data.summary) {
+        html += `
+            <div class="output-card">
+                <h3><i class="fas fa-lightbulb"></i> Summary</h3>
+                <div class="summary-box">${escapeHtml(data.summary)}</div>
+            </div>
+        `;
+    }
+
+    if (Array.isArray(data.notes) && data.notes.length) {
+        const notesHtml = data.notes.map(note => `<li>${escapeHtml(note)}</li>`).join('');
+        html += `
+            <div class="output-card">
+                <h3><i class="fas fa-list-check"></i> Key Notes</h3>
+                <ul class="notes-list">${notesHtml}</ul>
+            </div>
+        `;
+    }
+
+    if (Array.isArray(data.quiz) && data.quiz.length) {
+        const quizHtml = data.quiz.map((q, idx) => {
+            const options = Array.isArray(q.options) && q.options.length
+                ? `<ul class="quiz-options">${q.options.map(opt => `<li>${escapeHtml(opt)}</li>`).join('')}</ul>`
+                : '';
+            const answer = q.answer ? `<div class="quiz-answer">✓ Answer: ${escapeHtml(q.answer)}</div>` : '';
+            return `
+                <div class="quiz-item">
+                    <div class="quiz-question">Q${idx + 1}: ${escapeHtml(q.question || 'Question')}</div>
+                    ${options}
+                    ${answer}
+                </div>
+            `;
+        }).join('');
+
+        html += `
+            <div class="output-card">
+                <h3><i class="fas fa-question-circle"></i> Quiz Questions</h3>
+                ${quizHtml}
+            </div>
+        `;
+    }
+
+    if (Array.isArray(data.flashcards) && data.flashcards.length) {
+        const cardsHtml = data.flashcards.map(card => `
+            <div class="flashcard">
+                <div class="flashcard-q">Q: ${escapeHtml(card.question || 'Question')}</div>
+                <div class="flashcard-a">A: ${escapeHtml(card.answer || 'Answer')}</div>
+            </div>
+        `).join('');
+        html += `
+            <div class="output-card">
+                <h3><i class="fas fa-brain"></i> Flashcards</h3>
+                ${cardsHtml}
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toTextOutput(data) {
+    const lines = [];
+    lines.push('Lecture Notes');
+    lines.push('');
+    if (data.summary) {
+        lines.push('Summary:');
+        lines.push(data.summary);
+        lines.push('');
+    }
+    if (Array.isArray(data.notes) && data.notes.length) {
+        lines.push('Key Notes:');
+        data.notes.forEach((note, i) => lines.push(`${i + 1}. ${note}`));
+        lines.push('');
+    }
+    if (Array.isArray(data.quiz) && data.quiz.length) {
+        lines.push('Quiz:');
+        data.quiz.forEach((q, i) => {
+            lines.push(`Q${i + 1}: ${q.question || 'Question'}`);
+            if (Array.isArray(q.options)) {
+                q.options.forEach(opt => lines.push(`- ${opt}`));
+            }
+            if (q.answer) lines.push(`Answer: ${q.answer}`);
+            lines.push('');
+        });
+    }
+    if (Array.isArray(data.flashcards) && data.flashcards.length) {
+        lines.push('Flashcards:');
+        data.flashcards.forEach((card, i) => {
+            lines.push(`${i + 1}. Q: ${card.question || 'Question'}`);
+            lines.push(`   A: ${card.answer || 'Answer'}`);
+        });
+    }
+    return lines.join('\n').trim() + '\n';
+}
+
+function downloadOutput(format) {
+    if (!latestOutputData) {
+        showError('No generated output available to download.');
+        return;
+    }
+
+    let content = '';
+    let mimeType = '';
+    let ext = '';
+
+    if (format === 'json') {
+        content = JSON.stringify(latestOutputData, null, 2);
+        mimeType = 'application/json';
+        ext = 'json';
+    } else {
+        content = toTextOutput(latestOutputData);
+        mimeType = 'text/plain';
+        ext = 'txt';
+    }
+
+    const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lecture-notes.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+// Drag and drop
+const fileUploadLabel = document.querySelector('.file-upload-label');
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    fileUploadLabel.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    fileUploadLabel.addEventListener(eventName, () => {
+        fileUploadLabel.style.background = '#e8ebff';
+        fileUploadLabel.style.borderColor = '#764ba2';
+    });
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    fileUploadLabel.addEventListener(eventName, () => {
+        fileUploadLabel.style.background = '#f8f9ff';
+        fileUploadLabel.style.borderColor = '#667eea';
+    });
+});
+
+fileUploadLabel.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    document.getElementById('audioFile').files = files;
+    
+    const fileName = files[0]?.name;
+    if (fileName) {
+        const fileNameEl = document.getElementById('fileName');
+        fileNameEl.textContent = '✓ Selected: ' + fileName;
+        fileNameEl.style.display = 'block';
+    }
+});
+</script>
+
+</body>
+</html>
